@@ -107,6 +107,66 @@ public sealed class AppointmentTests
     }
 
     [Fact]
+    public void Reschedule_ToALaterStart_MovesBothEnds()
+    {
+        var appointment = NewAppointment();
+        var newStart = Start.AddDays(2);
+
+        appointment.Reschedule(newStart, newStart.AddMinutes(30), Created);
+
+        appointment.StartUtc.ShouldBe(newStart);
+        appointment.EndUtc.ShouldBe(newStart.AddMinutes(30));
+        appointment.Status.ShouldBe(AppointmentStatus.Booked);
+    }
+
+    [Fact]
+    public void Reschedule_WithADifferentDuration_Throws()
+    {
+        var appointment = NewAppointment();
+        var newStart = Start.AddDays(2);
+
+        var exception = Should.Throw<DomainRuleViolationException>(
+            () => appointment.Reschedule(newStart, newStart.AddMinutes(45), Created));
+
+        exception.Code.ShouldBe("appointment.duration_invalid");
+    }
+
+    [Fact]
+    public void Reschedule_IntoThePast_Throws()
+    {
+        var appointment = NewAppointment();
+
+        var exception = Should.Throw<DomainRuleViolationException>(
+            () => appointment.Reschedule(Start, Start.AddMinutes(30), Start.AddMinutes(1)));
+
+        exception.Code.ShouldBe("appointment.start_in_past");
+    }
+
+    [Fact]
+    public void Reschedule_AfterCancellation_Throws()
+    {
+        var appointment = NewAppointment();
+        appointment.Cancel(Created, null);
+
+        var exception = Should.Throw<DomainRuleViolationException>(
+            () => appointment.Reschedule(Start.AddDays(2), Start.AddDays(2).AddMinutes(30), Created));
+
+        exception.Code.ShouldBe("appointment.not_reschedulable");
+    }
+
+    [Fact]
+    public void Reschedule_WithAnOffset_IsStoredAsUtc()
+    {
+        var appointment = NewAppointment();
+        var localStart = new DateTimeOffset(2026, 3, 12, 9, 0, 0, TimeSpan.FromHours(3.5));
+
+        appointment.Reschedule(localStart, localStart.AddMinutes(30), Created);
+
+        appointment.StartUtc.Offset.ShouldBe(TimeSpan.Zero);
+        appointment.StartUtc.ShouldBe(new DateTimeOffset(2026, 3, 12, 5, 30, 0, TimeSpan.Zero));
+    }
+
+    [Fact]
     public void Complete_BeforeStart_Throws()
     {
         var appointment = NewAppointment();

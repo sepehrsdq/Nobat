@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import SlotField from '../components/SlotField.vue'
 import { ApiError, apiFetch } from '../lib/api'
+import { toPersianDigits } from '../lib/format'
 
 interface StaffSummary {
   id: string
@@ -50,6 +52,7 @@ const savedSnapshot = ref('')
 
 const dirty = computed(() => snapshot() !== savedSnapshot.value)
 const totalRanges = computed(() => days.value.reduce((sum, day) => sum + day.ranges.length, 0))
+const openDays = computed(() => days.value.filter((day) => day.ranges.length > 0).length)
 
 function snapshot(): string {
   return JSON.stringify(
@@ -187,11 +190,14 @@ onMounted(load)
 <template>
   <section class="page">
     <header class="page__header">
-      <div class="page__title">
-        <h1>ساعت کاری</h1>
-        <span v-if="staffName" class="badge">{{ staffName }}</span>
+      <div class="page__heading">
+        <p class="eyebrow">برنامهٔ هفته</p>
+        <div class="page__title">
+          <h1>ساعت کاری</h1>
+          <span v-if="staffName" class="badge">{{ staffName }}</span>
+        </div>
       </div>
-      <RouterLink class="btn btn--ghost" to="/panel/staff">بازگشت به پرسنل</RouterLink>
+      <RouterLink class="btn btn--ghost btn--sm" to="/panel/staff">بازگشت به پرسنل</RouterLink>
     </header>
 
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>
@@ -199,16 +205,44 @@ onMounted(load)
     <p v-else-if="loading" class="muted" aria-live="polite">در حال بارگذاری…</p>
 
     <template v-else>
-      <section class="card week">
+      <section class="week-strip" aria-label="خلاصهٔ هفته">
+        <div
+          v-for="day in days"
+          :key="day.day"
+          class="week-strip__day"
+          :class="{ 'week-strip__day--open': day.ranges.length > 0 }"
+        >
+          <span class="week-strip__name">{{ day.label }}</span>
+          <span class="week-strip__mark" aria-hidden="true" />
+          <span class="week-strip__meta">
+            {{ day.ranges.length > 0 ? `${toPersianDigits(day.ranges.length)} بازه` : 'تعطیل' }}
+          </span>
+        </div>
+      </section>
+
+      <section v-spotlight class="card week">
+        <header class="week__head">
+          <div>
+            <p class="eyebrow">بازه‌های پذیرش</p>
+            <h2>بیمار کِی می‌تواند نوبت بگیرد؟</h2>
+          </div>
+          <span class="week__total">
+            {{ toPersianDigits(openDays) }} روز باز
+            <span aria-hidden="true">·</span>
+            {{ toPersianDigits(totalRanges) }} بازه
+          </span>
+        </header>
+
         <p class="week__hint muted">
           هر بازهٔ زمانی که بیمار می‌تواند در آن نوبت بگیرد را وارد کنید. روزهای بدون بازه تعطیل
           حساب می‌شوند.
         </p>
 
-        <div v-for="day in days" :key="day.day" class="day">
+        <div v-for="day in days" :key="day.day" class="day" :class="{ 'day--closed': day.ranges.length === 0 }">
           <div class="day__name">
             <span>{{ day.label }}</span>
             <span v-if="day.ranges.length === 0" class="badge badge--off">تعطیل</span>
+            <span v-else class="badge badge--ok">{{ toPersianDigits(day.ranges.length) }} بازه</span>
           </div>
 
           <div class="day__ranges">
@@ -250,9 +284,13 @@ onMounted(load)
             </div>
 
             <button class="btn btn--ghost day__add" type="button" @click="addRange(day)">
-              افزودن بازه
+              {{ day.ranges.length === 0 ? 'این روز را باز کن' : 'افزودن بازه' }}
             </button>
           </div>
+        </div>
+
+        <div v-if="totalRanges === 0" class="week__void" aria-hidden="true">
+          <SlotField :rows="2" :cols="14" tone="light" />
         </div>
       </section>
 
@@ -260,9 +298,10 @@ onMounted(load)
 
       <div class="save-bar">
         <p v-if="savedMessage && !dirty" class="save-bar__ok" role="status">
+          <span class="save-bar__dot" aria-hidden="true" />
           {{ savedMessage }}
         </p>
-        <p v-else-if="dirty" class="muted">تغییرات ذخیره نشده است.</p>
+        <p v-else-if="dirty" class="save-bar__dirty">تغییرات ذخیره نشده است.</p>
         <p v-else class="muted">
           {{ totalRanges === 0 ? 'هنوز هیچ بازه‌ای ثبت نشده؛ مطب تعطیل است.' : 'همه‌چیز ذخیره شده است.' }}
         </p>
@@ -281,9 +320,117 @@ onMounted(load)
 </template>
 
 <style scoped>
+.page__heading {
+  display: grid;
+  gap: 2px;
+}
+
+/* ---------- week overview ---------- */
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.week-strip__day {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: var(--space-3) var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  text-align: center;
+  transition:
+    border-color var(--motion-fast) var(--ease),
+    background-color var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease-spring);
+}
+
+.week-strip__day--open {
+  border-color: rgba(10, 91, 81, 0.28);
+  background:
+    linear-gradient(180deg, var(--surface), var(--brand-soft));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .week-strip__day--open:hover {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.week-strip__name {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.week-strip__mark {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  overflow: hidden;
+  position: relative;
+}
+
+.week-strip__day--open .week-strip__mark {
+  background: var(--brand-soft);
+}
+
+.week-strip__day--open .week-strip__mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  transform-origin: right;
+  animation: strip-fill 700ms var(--ease-out-soft) both;
+}
+
+@keyframes strip-fill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.week-strip__meta {
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- editor ---------- */
+
 .week {
   display: grid;
   gap: var(--space-4);
+}
+
+.week__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.week__head h2 {
+  font-size: 1.05rem;
+}
+
+.week__total {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  padding: 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  white-space: nowrap;
 }
 
 .week__hint {
@@ -293,7 +440,7 @@ onMounted(load)
 
 .day {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 116px 1fr;
   align-items: start;
   gap: var(--space-3);
   padding-block-start: var(--space-3);
@@ -303,6 +450,10 @@ onMounted(load)
 .day:first-of-type {
   border-block-start: 0;
   padding-block-start: 0;
+}
+
+.day--closed {
+  opacity: 0.86;
 }
 
 .day__name {
@@ -318,6 +469,8 @@ onMounted(load)
   display: grid;
   gap: var(--space-2);
   justify-items: start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .range {
@@ -325,14 +478,24 @@ onMounted(load)
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
 }
 
 .range__input {
-  width: 126px;
+  width: 118px;
+  border-color: transparent;
+  background: var(--surface);
+}
+
+.range__input:focus {
+  border-color: var(--brand);
 }
 
 .range__dash {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--ink-soft);
 }
 
@@ -343,13 +506,23 @@ onMounted(load)
 
 .range__remove:hover:not(:disabled) {
   color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .day__add {
   min-height: 36px;
   font-size: 0.86rem;
   padding-inline: var(--space-3);
+  border-style: dashed;
 }
+
+.week__void {
+  width: min(360px, 100%);
+  margin-inline: auto;
+  opacity: 0.4;
+}
+
+/* ---------- save bar ---------- */
 
 .save-bar {
   display: flex;
@@ -360,15 +533,45 @@ onMounted(load)
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: rgba(255, 253, 248, 0.86);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-card);
 }
 
 .save-bar p {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: 0.86rem;
 }
 
 .save-bar__ok {
   color: var(--ok);
+}
+
+.save-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.save-bar__dirty {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-strip__day--open .week-strip__mark::after {
+    animation: none;
+    transform: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .week-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -381,9 +584,20 @@ onMounted(load)
     padding-block-start: 0;
   }
 
+  .range {
+    width: 100%;
+  }
+
+  .range__input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
   .save-bar {
     position: sticky;
     inset-block-end: 0;
+    z-index: 5;
   }
 }
 </style>

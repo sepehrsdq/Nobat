@@ -1,0 +1,34 @@
+# Build context: keep it small and secret-free.
+.git
+.github
+.gitignore
+.gitattributes
+
+# local-only notes (never in the image)
+doc
+AGENTS.md
+
+# build output and dependencies
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+src/Nobat.Api/wwwroot
+artifacts
+
+# editor / OS noise
+.vs
+.vscode
+.idea
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# secrets and local config
+.env
+.env.*
+appsettings.*.local.json
+*.pfx
+*.p12

@@ -56,11 +56,15 @@ public sealed class DomainExceptionHandler : IExceptionHandler
     {
         "auth.invalid_credentials" => StatusCodes.Status401Unauthorized,
         "auth.invalid_cookie" => StatusCodes.Status401Unauthorized,
+        "auth.signup_closed" => StatusCodes.Status403Forbidden,
         "tenant.slug_taken" => StatusCodes.Status409Conflict,
         "tenant.not_found" => StatusCodes.Status404NotFound,
         "staff.not_found" => StatusCodes.Status404NotFound,
         "service.not_found" => StatusCodes.Status404NotFound,
         "appointment.slot_taken" => StatusCodes.Status409Conflict,
+        "appointment.not_found" => StatusCodes.Status404NotFound,
+        "appointment.not_cancellable" => StatusCodes.Status409Conflict,
+        "appointment.not_reschedulable" => StatusCodes.Status409Conflict,
         "otp.throttled" => StatusCodes.Status429TooManyRequests,
         _ => StatusCodes.Status400BadRequest,
     };

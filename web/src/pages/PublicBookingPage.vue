@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import BrandMark from '../components/BrandMark.vue'
+import ConfettiBurst from '../components/ConfettiBurst.vue'
+import LoadingRows from '../components/LoadingRows.vue'
+import SlotField from '../components/SlotField.vue'
 import { ApiError, apiFetch } from '../lib/api'
 import { formatMinutes, formatToman, toPersianDigits } from '../lib/format'
 
@@ -270,214 +274,280 @@ onMounted(load)
   <div class="booking">
     <header class="booking__bar">
       <div class="booking__inner">
-        <span class="booking__brand">نوبت</span>
+        <span class="booking__brand">
+          <BrandMark :size="24" />
+          <span>نوبت</span>
+        </span>
         <span v-if="clinic" class="booking__clinic">{{ clinic.name }}</span>
+        <span class="booking__tag">نوبت آنلاین</span>
       </div>
     </header>
 
     <main class="booking__main">
       <p v-if="loadError" class="form-error" role="alert">{{ loadError }}</p>
 
-      <p v-else-if="loading" class="muted" aria-live="polite">در حال بارگذاری…</p>
+      <LoadingRows v-else-if="loading" variant="grid" :rows="3" />
 
-      <article v-else-if="booked" class="card done">
-        <span class="done__mark" aria-hidden="true">✓</span>
-        <h1>نوبت شما ثبت شد</h1>
-        <p class="muted">
-          {{ dayLabel(booked.startUtc) }} ساعت {{ timeLabel(booked.startUtc) }}
-        </p>
+      <template v-else-if="booked">
+        <Transition name="ticket">
+          <article :key="booked.id" class="ticket">
+            <ConfettiBurst :count="22" />
+            <div class="ticket__body">
+              <span class="ticket__stamp" aria-hidden="true">✓</span>
+              <p class="eyebrow">تأیید شد</p>
+              <h1 class="display--sm">نوبت شما ثبت شد.</h1>
+              <p class="ticket__when">{{ dayLabel(booked.startUtc) }} · {{ timeLabel(booked.startUtc) }}</p>
 
-        <ul class="done__facts">
-          <li><span>خدمت</span><strong>{{ booked.serviceName }}</strong></li>
-          <li><span>پزشک</span><strong>{{ booked.staffName }}</strong></li>
-          <li><span>مدت</span><strong>{{ formatMinutes(booked.durationMinutes) }}</strong></li>
-          <li><span>هزینه</span><strong>{{ formatToman(booked.priceRial) }}</strong></li>
-          <li><span>کد پیگیری</span><strong dir="ltr">{{ booked.id.slice(0, 8) }}</strong></li>
-        </ul>
+              <dl class="ticket__rows">
+                <div><dt>خدمت</dt><dd>{{ booked.serviceName }}</dd></div>
+                <div><dt>پزشک</dt><dd>{{ booked.staffName }}</dd></div>
+                <div><dt>مدت</dt><dd>{{ formatMinutes(booked.durationMinutes) }}</dd></div>
+                <div><dt>هزینه</dt><dd>{{ formatToman(booked.priceRial) }}</dd></div>
+              </dl>
+            </div>
 
-        <p class="done__hint muted">
-          این کد را نگه دارید. برای تغییر یا لغو، با مطب تماس بگیرید.
-        </p>
-
-        <button class="btn btn--ghost btn--block" type="button" @click="startOver">
-          گرفتن نوبت دیگر
-        </button>
-      </article>
+            <div class="ticket__stub">
+              <p class="ticket__code-label">کد پیگیری</p>
+              <p class="ticket__code" dir="ltr">{{ booked.id.slice(0, 8) }}</p>
+              <p class="ticket__hint">این کد را نگه دارید. برای تغییر یا لغو، با مطب تماس بگیرید.</p>
+              <button class="btn btn--ghost btn--block" type="button" @click="startOver">
+                گرفتن نوبت دیگر
+              </button>
+            </div>
+          </article>
+        </Transition>
+      </template>
 
       <template v-else-if="clinic">
-        <section class="card step">
-          <header class="step__head">
-            <h1>{{ clinic.name }}</h1>
-            <p class="muted">خدمت، پزشک و ساعت را انتخاب کنید.</p>
-          </header>
+        <section v-spotlight class="hero">
+          <div class="hero__text">
+            <p class="eyebrow eyebrow--inverse">وقت خالی، بدون تلفن</p>
+            <h1 class="display hero__title">
+              <span class="hero__line" v-reveal="60">{{ clinic.name }}</span>
+            </h1>
+            <p class="hero__copy" v-reveal="140">
+              خدمت و پزشک را انتخاب کنید؛ ساعت‌های خالی همین‌جا هستند و نوبت با یک کد پیامکی
+              تأیید می‌شود.
+            </p>
+          </div>
+          <div class="hero__art" aria-hidden="true">
+            <SlotField :rows="4" :cols="9" tone="dark" sweep />
+          </div>
+        </section>
 
-          <h2 class="step__title">۱. خدمت</h2>
+        <div class="layout">
+          <div class="steps">
+            <section v-spotlight v-reveal class="step">
+              <header class="step__head">
+                <span class="step__index">۰۱</span>
+                <h2>خدمت</h2>
+              </header>
 
-          <div v-if="clinic.services.length === 0" class="empty">
-            <p class="empty__title">این مطب هنوز خدمتی ثبت نکرده است.</p>
-            <p>کمی بعد دوباره سر بزنید.</p>
+              <div v-if="clinic.services.length === 0" class="empty">
+                <p class="empty__title">این مطب هنوز خدمتی ثبت نکرده است.</p>
+                <p>کمی بعد دوباره سر بزنید.</p>
+              </div>
+
+              <ul v-else class="options">
+                <li v-for="service in clinic.services" :key="service.id">
+                  <button
+                    class="option"
+                    :class="{ 'option--picked': service.id === serviceId }"
+                    type="button"
+                    :aria-pressed="service.id === serviceId"
+                    @click="chooseService(service.id)"
+                  >
+                    <span class="option__title">{{ service.name }}</span>
+                    <span class="option__meta">
+                      {{ formatMinutes(service.durationMinutes) }} · {{ formatToman(service.priceRial) }}
+                    </span>
+                    <span v-if="service.id === serviceId" class="option__check" aria-hidden="true">✓</span>
+                  </button>
+                </li>
+              </ul>
+            </section>
+
+            <section v-if="serviceId" v-reveal v-spotlight class="step">
+              <header class="step__head">
+                <span class="step__index">۰۲</span>
+                <h2>پزشک</h2>
+              </header>
+
+              <ul v-if="clinic.staff.length > 0" class="options">
+                <li v-for="member in clinic.staff" :key="member.id">
+                  <button
+                    class="option"
+                    :class="{ 'option--picked': member.id === staffId }"
+                    type="button"
+                    :aria-pressed="member.id === staffId"
+                    @click="chooseStaff(member.id)"
+                  >
+                    <span class="option__title">{{ member.displayName }}</span>
+                    <span class="option__meta">{{ member.title || 'پزشک' }}</span>
+                    <span v-if="member.id === staffId" class="option__check" aria-hidden="true">✓</span>
+                  </button>
+                </li>
+              </ul>
+
+              <p v-else class="muted">برای این مطب پزشکی ثبت نشده است.</p>
+            </section>
+
+            <section v-if="serviceId && staffId" v-reveal v-spotlight class="step">
+              <header class="step__head">
+                <span class="step__index">۰۳</span>
+                <h2>روز و ساعت</h2>
+              </header>
+
+              <ul class="days">
+                <li v-for="day in days" :key="day.date">
+                  <button
+                    class="day"
+                    :class="{ 'day--picked': day.date === selectedDate }"
+                    type="button"
+                    :aria-pressed="day.date === selectedDate"
+                    @click="chooseDate(day.date)"
+                  >
+                    <span class="day__name">{{ day.label }}</span>
+                    <span class="day__caption">{{ day.caption }}</span>
+                  </button>
+                </li>
+              </ul>
+
+              <div v-if="slotsLoading" class="slot-skeleton" aria-hidden="true">
+                <span v-for="n in 10" :key="n" class="skeleton slot-skeleton__pill" />
+              </div>
+              <p v-else-if="slots.length === 0" class="muted" aria-live="polite">
+                این روز وقت آزاد ندارد. روز دیگری را امتحان کنید.
+              </p>
+
+              <ul v-else class="slots stagger">
+                <li v-for="(slot, index) in slots" :key="slot.startUtc" :style="{ '--i': Math.min(index, 12) }">
+                  <button
+                    class="slot"
+                    :class="{ 'slot--picked': slot.startUtc === selectedStart }"
+                    type="button"
+                    :aria-pressed="slot.startUtc === selectedStart"
+                    @click="chooseSlot(slot.startUtc)"
+                  >
+                    {{ timeLabel(slot.startUtc) }}
+                  </button>
+                </li>
+              </ul>
+            </section>
+
+            <section v-if="selectedStart" v-reveal v-spotlight class="step">
+              <header class="step__head">
+                <span class="step__index">۰۴</span>
+                <h2>اطلاعات شما</h2>
+              </header>
+
+              <p class="step__summary">
+                {{ selectedService?.name }} · {{ selectedStaff?.displayName }} ·
+                {{ dayLabel(selectedStart) }} ساعت {{ timeLabel(selectedStart) }}
+              </p>
+
+              <form class="stack" novalidate @submit.prevent="submit">
+                <div class="field">
+                  <label class="field__label" for="patient-name">نام و نام خانوادگی</label>
+                  <input
+                    id="patient-name"
+                    v-model="patientName"
+                    class="field__control"
+                    required
+                    maxlength="120"
+                    autocomplete="name"
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="patient-phone">شمارهٔ موبایل</label>
+                  <div class="phone">
+                    <input
+                      id="patient-phone"
+                      v-model="phone"
+                      class="field__control"
+                      dir="ltr"
+                      inputmode="numeric"
+                      required
+                      maxlength="11"
+                      autocomplete="tel"
+                      placeholder="09121234567"
+                    />
+                    <button
+                      class="btn btn--ghost"
+                      type="button"
+                      :disabled="otpBusy || codeSent"
+                      @click="requestCode"
+                    >
+                      {{ codeSent ? 'کد فرستاده شد' : otpBusy ? 'در حال ارسال…' : 'دریافت کد' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="codeSent" class="field">
+                  <label class="field__label" for="patient-code">کد تأیید</label>
+                  <input
+                    id="patient-code"
+                    v-model="code"
+                    class="field__control field__control--code"
+                    dir="ltr"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    maxlength="6"
+                    required
+                  />
+                  <p v-if="devCode" class="field__hint">
+                    حالت آزمایشی — کد شما: <strong>{{ toPersianDigits(devCode) }}</strong>
+                  </p>
+                  <p v-else class="field__hint">کد شش رقمی به پیامک شما رسیده است.</p>
+                </div>
+
+                <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
+
+                <button class="btn btn--primary btn--block" type="submit" :disabled="booking || !codeSent">
+                  {{ booking ? 'در حال ثبت…' : 'ثبت نوبت' }}
+                </button>
+              </form>
+            </section>
           </div>
 
-          <ul v-else class="options">
-            <li v-for="service in clinic.services" :key="service.id">
-              <button
-                class="option"
-                :class="{ 'option--picked': service.id === serviceId }"
-                type="button"
-                :aria-pressed="service.id === serviceId"
-                @click="chooseService(service.id)"
-              >
-                <span class="option__title">{{ service.name }}</span>
-                <span class="option__meta">
-                  {{ formatMinutes(service.durationMinutes) }} · {{ formatToman(service.priceRial) }}
-                </span>
-              </button>
-            </li>
-          </ul>
-        </section>
-
-        <section v-if="serviceId" class="card step">
-          <h2 class="step__title">۲. پزشک</h2>
-
-          <ul v-if="clinic.staff.length > 0" class="options">
-            <li v-for="member in clinic.staff" :key="member.id">
-              <button
-                class="option"
-                :class="{ 'option--picked': member.id === staffId }"
-                type="button"
-                :aria-pressed="member.id === staffId"
-                @click="chooseStaff(member.id)"
-              >
-                <span class="option__title">{{ member.displayName }}</span>
-                <span class="option__meta">{{ member.title || 'پزشک' }}</span>
-              </button>
-            </li>
-          </ul>
-
-          <p v-else class="muted">برای این مطب پزشکی ثبت نشده است.</p>
-        </section>
-
-        <section v-if="serviceId && staffId" class="card step">
-          <h2 class="step__title">۳. روز</h2>
-
-          <ul class="days">
-            <li v-for="day in days" :key="day.date">
-              <button
-                class="day"
-                :class="{ 'day--picked': day.date === selectedDate }"
-                type="button"
-                :aria-pressed="day.date === selectedDate"
-                @click="chooseDate(day.date)"
-              >
-                <span class="day__name">{{ day.label }}</span>
-                <span class="day__caption">{{ day.caption }}</span>
-              </button>
-            </li>
-          </ul>
-
-          <h2 class="step__title step__title--gap">۴. ساعت</h2>
-
-          <p v-if="slotsLoading" class="muted" aria-live="polite">در حال گرفتن ساعت‌های آزاد…</p>
-
-          <p v-else-if="slots.length === 0" class="muted">
-            این روز وقت آزاد ندارد. روز دیگری را امتحان کنید.
-          </p>
-
-          <ul v-else class="slots">
-            <li v-for="slot in slots" :key="slot.startUtc">
-              <button
-                class="slot"
-                :class="{ 'slot--picked': slot.startUtc === selectedStart }"
-                type="button"
-                :aria-pressed="slot.startUtc === selectedStart"
-                @click="chooseSlot(slot.startUtc)"
-              >
-                {{ timeLabel(slot.startUtc) }}
-              </button>
-            </li>
-          </ul>
-        </section>
-
-        <section v-if="selectedStart" class="card step">
-          <h2 class="step__title">۵. اطلاعات شما</h2>
-
-          <p class="step__summary">
-            {{ selectedService?.name }} · {{ selectedStaff?.displayName }} ·
-            {{ dayLabel(selectedStart) }} ساعت {{ timeLabel(selectedStart) }}
-          </p>
-
-          <form class="stack" novalidate @submit.prevent="submit">
-            <div class="field">
-              <label class="field__label" for="patient-name">نام و نام خانوادگی</label>
-              <input
-                id="patient-name"
-                v-model="patientName"
-                class="field__control"
-                required
-                maxlength="120"
-                autocomplete="name"
-              />
-            </div>
-
-            <div class="field">
-              <label class="field__label" for="patient-phone">شمارهٔ موبایل</label>
-              <div class="phone">
-                <input
-                  id="patient-phone"
-                  v-model="phone"
-                  class="field__control"
-                  dir="ltr"
-                  inputmode="numeric"
-                  required
-                  maxlength="11"
-                  autocomplete="tel"
-                  placeholder="09121234567"
-                />
-                <button
-                  class="btn btn--ghost"
-                  type="button"
-                  :disabled="otpBusy || codeSent"
-                  @click="requestCode"
-                >
-                  {{ codeSent ? 'کد فرستاده شد' : otpBusy ? 'در حال ارسال…' : 'دریافت کد' }}
-                </button>
+          <aside v-spotlight class="summary" aria-label="خلاصهٔ انتخاب">
+            <p class="eyebrow">خلاصهٔ نوبت</p>
+            <dl class="summary__rows">
+              <div><dt>خدمت</dt><dd>{{ selectedService?.name ?? 'انتخاب نشده' }}</dd></div>
+              <div><dt>پزشک</dt><dd>{{ selectedStaff?.displayName ?? 'انتخاب نشده' }}</dd></div>
+              <div>
+                <dt>روز</dt>
+                <dd>{{ selectedStart ? dayLabel(selectedStart) : 'انتخاب نشده' }}</dd>
               </div>
-            </div>
+              <div>
+                <dt>ساعت</dt>
+                <dd>{{ selectedStart ? timeLabel(selectedStart) : 'انتخاب نشده' }}</dd>
+              </div>
+            </dl>
 
-            <div v-if="codeSent" class="field">
-              <label class="field__label" for="patient-code">کد تأیید</label>
-              <input
-                id="patient-code"
-                v-model="code"
-                class="field__control field__control--code"
-                dir="ltr"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                maxlength="6"
-                required
-              />
-              <p v-if="devCode" class="field__hint">
-                حالت آزمایشی — کد شما: <strong>{{ toPersianDigits(devCode) }}</strong>
-              </p>
-              <p v-else class="field__hint">کد شش رقمی به پیامک شما رسیده است.</p>
-            </div>
+            <p class="summary__price">
+              {{ selectedService ? formatToman(selectedService.priceRial) : '—' }}
+            </p>
 
-            <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
-
-            <button class="btn btn--primary btn--block" type="submit" :disabled="booking || !codeSent">
-              {{ booking ? 'در حال ثبت…' : 'ثبت نوبت' }}
-            </button>
-          </form>
-        </section>
+            <p class="summary__hint">
+              کد تأیید به موبایل شما می‌رود؛ ثبت نهایی بعد از وارد کردن کد انجام می‌شود.
+            </p>
+          </aside>
+        </div>
       </template>
     </main>
 
-    <footer class="booking__footer muted">نوبت — نوبت‌دهی آنلاین مطب</footer>
+    <footer class="booking__footer">
+      <BrandMark :size="18" />
+      <span>نوبت — نوبت‌دهی آنلاین مطب</span>
+    </footer>
   </div>
 </template>
 
 <style scoped>
 .booking {
+  --booking-width: 980px;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -485,15 +555,16 @@ onMounted(load)
 }
 
 .booking__bar {
-  background: var(--surface);
   border-block-end: 1px solid var(--line);
+  background: rgba(243, 239, 230, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 .booking__inner {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--booking-width);
   margin-inline: auto;
-  min-height: 60px;
+  min-height: 58px;
   padding-inline: var(--space-4);
   display: flex;
   align-items: center;
@@ -501,20 +572,30 @@ onMounted(load)
 }
 
 .booking__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   font-weight: 700;
-  color: var(--brand);
+  color: var(--ink);
 }
 
 .booking__clinic {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--ink-soft);
-  border-inline-start: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line-strong);
   padding-inline-start: var(--space-3);
+}
+
+.booking__tag {
+  margin-inline-start: auto;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--brand);
 }
 
 .booking__main {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--booking-width);
   margin-inline: auto;
   padding: var(--space-4);
   display: grid;
@@ -523,42 +604,118 @@ onMounted(load)
   align-content: start;
 }
 
-.booking__footer {
-  text-align: center;
-  font-size: 0.78rem;
-  padding: var(--space-5) var(--space-4);
+/* ---------- hero ---------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: var(--space-5);
+  align-items: end;
+  padding: clamp(var(--space-5), 4vw, var(--space-6));
+  border-radius: var(--radius-card-lg);
+  background:
+    radial-gradient(620px 300px at 85% -20%, rgba(217, 138, 95, 0.18), transparent 60%),
+    radial-gradient(520px 380px at 0% 120%, rgba(10, 91, 81, 0.55), transparent 70%),
+    var(--brand-deep);
+  color: var(--on-dark);
+}
+
+.hero__text {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.hero__title {
+  font-size: clamp(2rem, 4.4vw, 3.1rem);
+  line-height: 1.12;
+}
+
+.hero__copy {
+  max-width: 46ch;
+  font-size: 0.9rem;
+  line-height: 1.95;
+  color: var(--on-dark-soft);
+}
+
+.hero__art {
+  align-self: end;
+  opacity: 0.9;
+}
+
+/* ---------- layout ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .step {
   display: grid;
   gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  animation: rise-in 260ms var(--ease-out-soft) both;
 }
 
-.step__head h1 {
-  font-size: 1.3rem;
+.step__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.step__head p {
-  font-size: 0.9rem;
+.step__head h2 {
+  font-size: 1rem;
 }
 
-.step__title {
-  font-size: 0.95rem;
+.step__index {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
   color: var(--ink-soft);
-  font-weight: 500;
-}
-
-.step__title--gap {
-  margin-block-start: var(--space-3);
+  font-variant-numeric: tabular-nums;
 }
 
 .step__summary {
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-input);
   background: var(--brand-soft);
-  color: var(--brand);
+  color: var(--brand-deep);
+  animation: rise-in 260ms var(--ease-out-soft) 60ms both;
 }
+
+/* ---------- slot skeleton ---------- */
+
+.slot-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.slot-skeleton__pill {
+  width: 84px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+}
+
+/* ---------- options ---------- */
 
 .options {
   list-style: none;
@@ -569,6 +726,7 @@ onMounted(load)
 }
 
 .option {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: baseline;
@@ -586,13 +744,17 @@ onMounted(load)
     background-color var(--motion-fast) var(--ease);
 }
 
-.option:hover {
-  border-color: #c6cfd2;
+@media (hover: hover) and (pointer: fine) {
+  .option:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-card);
+  }
 }
 
 .option--picked {
   border-color: var(--brand);
   background: var(--brand-soft);
+  padding-inline-end: 42px;
 }
 
 .option__title {
@@ -604,47 +766,88 @@ onMounted(load)
   color: var(--ink-soft);
 }
 
+.option__check {
+  position: absolute;
+  inset-inline-end: 14px;
+  inset-block-start: 50%;
+  transform: translateY(-50%) scale(0.94);
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.7rem;
+  animation: check-in 180ms var(--ease-spring) backwards;
+}
+
+@keyframes check-in {
+  to {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option__check {
+    animation: none;
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---------- days & slots ---------- */
+
 .days {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 4px;
   display: flex;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .day {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 82px;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-input);
   background: var(--surface);
   font: inherit;
+  text-align: center;
   cursor: pointer;
   transition:
     border-color var(--motion-fast) var(--ease),
-    background-color var(--motion-fast) var(--ease);
+    background-color var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
 }
 
 .day:hover {
-  border-color: #c6cfd2;
+  border-color: var(--line-strong);
 }
 
 .day--picked {
-  border-color: var(--brand);
-  background: var(--brand-soft);
+  border-color: var(--brand-deep);
+  background: var(--brand-deep);
+  color: var(--on-dark);
 }
 
 .day__name {
+  font-size: 0.84rem;
   font-weight: 500;
-  font-size: 0.86rem;
 }
 
 .day__caption {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--ink-soft);
+}
+
+.day--picked .day__caption {
+  color: var(--on-dark-soft);
 }
 
 .slots {
@@ -657,8 +860,9 @@ onMounted(load)
 }
 
 .slot {
-  min-width: 76px;
-  padding: 8px 10px;
+  min-width: 74px;
+  min-height: 38px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--surface);
@@ -667,11 +871,12 @@ onMounted(load)
   cursor: pointer;
   transition:
     border-color var(--motion-fast) var(--ease),
-    background-color var(--motion-fast) var(--ease);
+    background-color var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
 }
 
 .slot:hover {
-  border-color: #c6cfd2;
+  border-color: var(--line-strong);
 }
 
 .slot--picked {
@@ -679,6 +884,8 @@ onMounted(load)
   background: var(--brand);
   color: #fff;
 }
+
+/* ---------- form ---------- */
 
 .phone {
   display: flex;
@@ -697,50 +904,242 @@ onMounted(load)
   font-variant-numeric: tabular-nums;
 }
 
-.done {
+/* ---------- summary ---------- */
+
+.summary {
+  position: sticky;
+  inset-block-start: var(--space-4);
   display: grid;
-  justify-items: center;
   gap: var(--space-3);
-  text-align: center;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
 }
 
-.done__mark {
+.summary__rows {
   display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--brand-soft);
-  color: var(--brand);
-  font-size: 1.2rem;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: 0.84rem;
 }
 
-.done__facts {
-  list-style: none;
+.summary__rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: 4px;
+  border-block-end: 1px dashed var(--line);
+}
+
+.summary__rows dt {
+  color: var(--ink-soft);
+}
+
+.summary__rows dd {
   margin: 0;
-  padding: 0;
-  width: 100%;
+  text-align: end;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.summary__price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-deep);
+}
+
+.summary__hint {
+  font-size: 0.76rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+/* ---------- ticket ---------- */
+
+.ticket {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lift);
+}
+
+.ticket__body {
   display: grid;
   gap: var(--space-2);
-  text-align: start;
+  padding: clamp(var(--space-5), 4vw, var(--space-6));
 }
 
-.done__facts li {
+.ticket__stamp {
+  justify-self: start;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-block-end: var(--space-2);
+  border: 2px solid var(--brand);
+  border-radius: 50%;
+  color: var(--brand);
+  font-size: 1.4rem;
+  transform: rotate(-8deg);
+  animation: stamp-in var(--motion-delight) var(--ease-out) both;
+}
+
+.ticket__when {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.ticket__rows {
+  display: grid;
+  gap: 0;
+  margin: var(--space-3) 0 0;
+}
+
+.ticket__rows div {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-  padding-block: 6px;
+  padding-block: 7px;
   border-block-end: 1px solid var(--line);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
-.done__facts span {
+.ticket__rows dt {
   color: var(--ink-soft);
 }
 
-.done__hint {
-  font-size: 0.82rem;
+.ticket__rows dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.ticket__stub {
+  display: grid;
+  align-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--surface-2);
+  border-inline-start: 1px dashed var(--line-strong);
+  text-align: center;
+}
+
+.ticket__code-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+
+.ticket__code {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-deep);
+}
+
+/* The code is the one thing the patient must keep: let it land last and softly. */
+.ticket__code {
+  animation: code-in 320ms var(--ease-out-soft) 260ms both;
+}
+
+@keyframes code-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ticket__hint {
+  font-size: 0.74rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.ticket__stub .btn {
+  margin-block-start: var(--space-2);
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotate(-14deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket__code {
+    animation: none;
+  }
+}
+
+/* ---------- footer ---------- */
+
+.booking__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summary {
+    position: static;
+    order: -1;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero__art {
+    display: none;
+  }
+}
+
+/* The ticket is the reward moment: give it a real entrance via <Transition>. */
+.ticket-enter-active {
+  transition:
+    opacity var(--motion-delight) var(--ease-out-soft),
+    transform var(--motion-delight) var(--ease-spring);
+}
+
+.ticket-enter-from {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(0.97);
+}
+
+@media (max-width: 700px) {
+  .ticket {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket__stub {
+    border-inline-start: 0;
+    border-block-start: 1px dashed var(--line-strong);
+  }
 }
 
 @media (max-width: 480px) {
@@ -753,6 +1152,15 @@ onMounted(load)
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
+  }
+
+  .option--picked {
+    padding-inline-end: var(--space-4);
+  }
+
+  .option__check {
+    inset-block-start: 14px;
+    transform: none;
   }
 }
 </style>

@@ -1,0 +1,75 @@
+name: deploy
+
+# Builds the single image and publishes it to GHCR. The host pulls the new tag; how that happens is
+# the host's business, so the generic trigger is a webhook secret.
+#
+# Required secrets to actually roll out: DEPLOY_WEBHOOK_URL (optional; the image still publishes
+# without it). Runtime config belongs to the host: ConnectionStrings__Default, Auth__AllowPublicSignup,
+# Proxy__TrustForwardedHeaders, Sms__ExposeCodeInResponse.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type deploy to build and publish the image"
+        required: true
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    if: github.event_name == 'push' || inputs.confirm == 'deploy'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  notify:
+    needs: image
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+
+    steps:
+      - name: Ask the host to pull the new image
+        if: env.DEPLOY_WEBHOOK_URL != ''
+        run: curl --fail --silent --show-error --retry 3 --request POST "$DEPLOY_WEBHOOK_URL"

@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
+using Nobat.Application.Appointments;
 using Nobat.Application.Auth;
 using Nobat.Application.Catalog;
 using Nobat.Application.Personnel;
 using Nobat.Application.Public;
 using Nobat.Application.WorkingHours;
+
 namespace Nobat.Application;
 
 public static class DependencyInjection
@@ -28,6 +30,11 @@ public static class DependencyInjection
         services.AddScoped<GetPublicSlotsHandler>();
         services.AddScoped<RequestOtpHandler>();
         services.AddScoped<BookAppointmentHandler>();
+
+        services.AddScoped<ListAppointmentsHandler>();
+        services.AddScoped<CancelAppointmentHandler>();
+        services.AddScoped<RescheduleAppointmentHandler>();
+        services.AddScoped<GetRescheduleSlotsHandler>();
 
         return services;
     }

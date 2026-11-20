@@ -155,6 +155,48 @@ public sealed class Appointment : ITenantEntity
         CancellationReason = trimmedReason;
     }
 
+    /// <summary>
+    /// Moves a booked appointment to a new start. The service, and therefore the length, stays the
+    /// same; the free-slot check happens in the use-case, and the unique index is the last word.
+    /// </summary>
+    public void Reschedule(DateTimeOffset startUtc, DateTimeOffset endUtc, DateTimeOffset nowUtc)
+    {
+        if (Status != AppointmentStatus.Booked)
+        {
+            throw new DomainRuleViolationException(
+                "appointment.not_reschedulable",
+                "فقط نوبت‌های فعال را می‌توان جابه‌جا کرد.");
+        }
+
+        var start = startUtc.ToUniversalTime();
+        var end = endUtc.ToUniversalTime();
+        var now = nowUtc.ToUniversalTime();
+
+        if (start <= now)
+        {
+            throw new DomainRuleViolationException(
+                "appointment.start_in_past",
+                "زمان تازه باید بعد از الان باشد.");
+        }
+
+        if (end <= start)
+        {
+            throw new DomainRuleViolationException(
+                "appointment.range_invalid",
+                "پایان نوبت باید بعد از شروع آن باشد.");
+        }
+
+        if (end - start != EndUtc - StartUtc)
+        {
+            throw new DomainRuleViolationException(
+                "appointment.duration_invalid",
+                "طول نوبت در جابه‌جایی نباید تغییر کند.");
+        }
+
+        StartUtc = start;
+        EndUtc = end;
+    }
+
     public void Complete(DateTimeOffset nowUtc)
     {
         EnsureStarted(nowUtc, "appointment.not_completable", "نوبتی که شروع نشده را نمی‌توان انجام‌شده ثبت کرد.");

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
 using Nobat.Application.Auth;
 
 namespace Nobat.Api.Endpoints;
@@ -19,6 +20,10 @@ public static class AuthEndpoints
         auth.MapPost("/register", (Delegate)RegisterAsync);
         auth.MapPost("/login", (Delegate)LoginAsync);
         auth.MapPost("/logout", (Delegate)LogoutAsync);
+
+        // The login page hides the signup tab when this is false; the server is still the guard.
+        auth.MapGet("/options", (IOptions<AuthOptions> options) =>
+            Results.Ok(new { allowPublicSignup = options.Value.AllowPublicSignup }));
 
         app.MapGet("/api/me", Me)
             .WithTags("Auth")

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Nobat.Application.Abstractions;
 using Nobat.Domain.Common;
 using Nobat.Domain.Tenants;
@@ -22,23 +23,33 @@ public sealed class RegisterClinicHandler
     private readonly IApplicationDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITenantContextSetter _tenantContext;
+    private readonly IOptions<AuthOptions> _authOptions;
     private readonly TimeProvider _clock;
 
     public RegisterClinicHandler(
         IApplicationDbContext db,
         IPasswordHasher passwordHasher,
         ITenantContextSetter tenantContext,
+        IOptions<AuthOptions> authOptions,
         TimeProvider clock)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _tenantContext = tenantContext;
+        _authOptions = authOptions;
         _clock = clock;
     }
 
     public async Task<AuthSession> HandleAsync(RegisterClinicRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        if (!_authOptions.Value.AllowPublicSignup)
+        {
+            throw new DomainRuleViolationException(
+                "auth.signup_closed",
+                "ثبت‌نام مطب در این نسخه بسته است. برای دمو از حساب آزمایشی استفاده کنید.");
+        }
 
         PasswordPolicy.EnsureValid(request.Password);
 

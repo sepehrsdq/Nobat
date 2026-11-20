@@ -73,3 +73,21 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: web
+
+  # The deploy image is built on every push, not just on release: a Dockerfile that only runs
+  # during deployment is a Dockerfile that breaks during deployment.
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -135,6 +135,70 @@ public sealed class AuthTests
     }
 
     [Fact]
+    public async Task Options_ReportWhetherSignupIsOpen()
+    {
+        using var openFactory = new NobatApiFactory(_database.ConnectionString);
+        using var openClient = openFactory.CreateClient();
+        var open = await openClient.GetFromJsonAsync<SignupOptions>("/api/auth/options");
+        open!.AllowPublicSignup.ShouldBeTrue();
+
+        using var closedFactory = new NobatApiFactory(
+            _database.ConnectionString,
+            new Dictionary<string, string?> { ["Auth:AllowPublicSignup"] = "false" });
+        using var closedClient = closedFactory.CreateClient();
+        var closed = await closedClient.GetFromJsonAsync<SignupOptions>("/api/auth/options");
+        closed!.AllowPublicSignup.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Register_WhenSignupIsClosed_ReturnsForbiddenWithStableCode()
+    {
+        using var factory = new NobatApiFactory(
+            _database.ConnectionString,
+            new Dictionary<string, string?> { ["Auth:AllowPublicSignup"] = "false" });
+        using var client = factory.CreateClient();
+
+        var register = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            slug = UniqueSlug(),
+            clinicName = "مطب بسته",
+            ownerName = "سپهر",
+            phone = OwnerPhone,
+            password = Password,
+        });
+
+        register.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await register.Content.ReadFromJsonAsync<ProblemDetails>())!.Type.ShouldBe("auth.signup_closed");
+    }
+
+    [Fact]
+    public async Task Login_StillWorks_WhenSignupIsClosed()
+    {
+        string slug;
+
+        using (var openFactory = new NobatApiFactory(_database.ConnectionString))
+        {
+            using var openClient = openFactory.CreateClient();
+            slug = await RegisterClinicAsync(openClient);
+        }
+
+        using var closedFactory = new NobatApiFactory(
+            _database.ConnectionString,
+            new Dictionary<string, string?> { ["Auth:AllowPublicSignup"] = "false" });
+        using var closedClient = closedFactory.CreateClient();
+
+        var login = await closedClient.PostAsJsonAsync("/api/auth/login", new
+        {
+            tenantSlug = slug,
+            phone = OwnerPhone,
+            password = Password,
+        });
+
+        login.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await login.Content.ReadFromJsonAsync<MeResponse>())!.TenantSlug.ShouldBe(slug);
+    }
+
+    [Fact]
     public async Task Me_WithoutCookie_ReturnsUnauthorized()
     {
         using var factory = new NobatApiFactory(_database.ConnectionString);
@@ -188,4 +252,6 @@ public sealed class AuthTests
     private static string UniqueSlug() => "clinic-" + Guid.NewGuid().ToString("N")[..8];
 
     private sealed record MeResponse(string UserId, string TenantId, string TenantSlug, string FullName, string Role);
+
+    private sealed record SignupOptions(bool AllowPublicSignup);
 }

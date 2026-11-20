@@ -1,16 +1,31 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Nobat.Api.Endpoints;
 using Nobat.Api.Errors;
 using Nobat.Api.Middleware;
 using Nobat.Application;
+using Nobat.Application.Auth;
 using Nobat.Application.Notifications;
 using Nobat.Infrastructure;
 using Nobat.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Behind a reverse proxy (the demo host, or nginx on a VPS) the client address arrives in
+// X-Forwarded-For. Off by default: trusting it while directly reachable lets anyone forge their
+// own IP and walk around the rate limiter.
+if (builder.Configuration.GetValue<bool>("Proxy:TrustForwardedHeaders"))
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
 
 var connectionString = builder.Configuration.GetConnectionString("Default");
 
@@ -37,6 +52,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
 });
 builder.Services.AddApplication();
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
 builder.Services.Configure<SmsOptions>(builder.Configuration.GetSection(SmsOptions.SectionName));
 builder.Services.AddInfrastructure(connectionString);
 
@@ -105,6 +121,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseExceptionHandler();
+app.UseForwardedHeaders();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
@@ -114,6 +131,7 @@ app.MapAuthEndpoints();
 app.MapStaffEndpoints();
 app.MapServiceEndpoints();
 app.MapWorkingHourEndpoints();
+app.MapAppointmentEndpoints();
 app.MapPublicEndpoints();
 
 app.MapGet("/health", (TimeProvider clock) => Results.Ok(new HealthResponse("ok", clock.GetUtcNow())))

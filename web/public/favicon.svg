@@ -1,6 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="نوبت">
-  <rect width="32" height="32" rx="8" fill="#0B6B62" />
-  <path d="M9 12h14M11 9v3M21 9v3" stroke="#E3F2EF" stroke-width="2" stroke-linecap="round" />
-  <rect x="9" y="12" width="14" height="12" rx="2.5" stroke="#E3F2EF" stroke-width="2" fill="none" />
-  <path d="M13 17.5l2 2 4-4.5" stroke="#E3F2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="8" fill="#0A5B51" />
+  <circle cx="16" cy="16" r="9.6" fill="none" stroke="#F3EFE6" stroke-opacity="0.45" stroke-width="1.6" />
+  <path d="M16 16V8.6" stroke="#F3EFE6" stroke-width="1.8" stroke-linecap="round" />
+  <path d="M16 16l4.2 3.4" stroke="#F3EFE6" stroke-opacity="0.6" stroke-width="1.8" stroke-linecap="round" />
+  <circle cx="16" cy="7.6" r="2.2" fill="#F3EFE6" />
+  <circle cx="16" cy="16" r="1.4" fill="#F3EFE6" />
 </svg>

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import PanelLayout from './layouts/PanelLayout.vue'
+import AppointmentsPage from './pages/AppointmentsPage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import PublicBookingPage from './pages/PublicBookingPage.vue'
 import ServicesPage from './pages/ServicesPage.vue'
@@ -10,14 +11,15 @@ import { session } from './lib/auth'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/panel/staff' },
+    { path: '/', redirect: '/panel/appointments' },
     { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
     { path: '/b/:slug', name: 'booking', component: PublicBookingPage, meta: { public: true } },
     {
       path: '/panel',
       component: PanelLayout,
       children: [
-        { path: '', redirect: '/panel/staff' },
+        { path: '', redirect: '/panel/appointments' },
+        { path: 'appointments', name: 'appointments', component: AppointmentsPage },
         { path: 'staff', name: 'staff', component: StaffPage },
         {
           path: 'staff/:staffId/working-hours',
@@ -27,7 +29,7 @@ export const router = createRouter({
         { path: 'services', name: 'services', component: ServicesPage },
       ],
     },
-    { path: '/:pathMatch(.*)*', redirect: '/panel/staff' },
+    { path: '/:pathMatch(.*)*', redirect: '/panel/appointments' },
   ],
 })
 
