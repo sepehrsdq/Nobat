@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nobat.Application.Abstractions;
+using Nobat.Infrastructure.Notifications;
 using Nobat.Infrastructure.Persistence;
 using Nobat.Infrastructure.Persistence.Interceptors;
 using Nobat.Infrastructure.Security;
@@ -35,6 +36,8 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<NobatDbContext>());
 
         services.TryAddSingleton<IPasswordHasher, PasswordHasherAdapter>();
+        services.TryAddSingleton<IDatabaseErrorTranslator, SqlServerErrorTranslator>();
+        services.TryAddSingleton<ISmsSender, ConsoleSmsSender>();
         services.TryAddSingleton(TimeProvider.System);
 
         return services;

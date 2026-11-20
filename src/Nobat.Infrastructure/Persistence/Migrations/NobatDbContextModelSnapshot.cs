@@ -291,6 +291,52 @@ namespace Nobat.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Nobat.Domain.Verification.OtpChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("ConsumedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("nchar(11)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc")
+                        .HasDatabaseName("IX_otp_challenges_expires");
+
+                    b.HasIndex("TenantId", "PhoneNumber", "CreatedAtUtc")
+                        .HasDatabaseName("IX_otp_challenges_tenant_phone_created");
+
+                    b.ToTable("otp_challenges", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_otp_challenges_phone_length", "LEN([PhoneNumber]) = 11");
+                        });
+                });
+
             modelBuilder.Entity("Nobat.Domain.Appointments.Appointment", b =>
                 {
                     b.HasOne("Nobat.Domain.Catalog.Service", null)

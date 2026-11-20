@@ -60,6 +60,8 @@ public sealed class DomainExceptionHandler : IExceptionHandler
         "tenant.not_found" => StatusCodes.Status404NotFound,
         "staff.not_found" => StatusCodes.Status404NotFound,
         "service.not_found" => StatusCodes.Status404NotFound,
+        "appointment.slot_taken" => StatusCodes.Status409Conflict,
+        "otp.throttled" => StatusCodes.Status429TooManyRequests,
         _ => StatusCodes.Status400BadRequest,
     };
 

@@ -27,6 +27,25 @@ public static class PublicEndpoints
             CancellationToken cancellationToken) =>
             Results.Ok(await handler.HandleAsync(slug, serviceId, staffId, date, cancellationToken)));
 
+        group.MapPost("/otp", async (
+            string slug,
+            RequestOtpRequest request,
+            RequestOtpHandler handler,
+            CancellationToken cancellationToken) =>
+            Results.Ok(await handler.HandleAsync(slug, request, cancellationToken)))
+            .RequireRateLimiting("otp");
+
+        group.MapPost("/appointments", async (
+            string slug,
+            BookAppointmentRequest request,
+            BookAppointmentHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var booked = await handler.HandleAsync(slug, request, cancellationToken);
+
+            return Results.Json(booked, statusCode: StatusCodes.Status201Created);
+        });
+
         return app;
     }
 }

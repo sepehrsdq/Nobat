@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import PanelLayout from './layouts/PanelLayout.vue'
 import LoginPage from './pages/LoginPage.vue'
+import PublicBookingPage from './pages/PublicBookingPage.vue'
 import ServicesPage from './pages/ServicesPage.vue'
 import StaffPage from './pages/StaffPage.vue'
 import WorkingHoursPage from './pages/WorkingHoursPage.vue'
@@ -11,6 +12,7 @@ export const router = createRouter({
   routes: [
     { path: '/', redirect: '/panel/staff' },
     { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
+    { path: '/b/:slug', name: 'booking', component: PublicBookingPage, meta: { public: true } },
     {
       path: '/panel',
       component: PanelLayout,

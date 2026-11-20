@@ -27,6 +27,15 @@ async function logout() {
         <div class="shell__user">
           <span class="chip">{{ session.user?.tenantSlug }}</span>
           <span class="muted shell__name">{{ session.user?.fullName }}</span>
+          <a
+            v-if="session.user"
+            class="btn btn--quiet"
+            :href="`/b/${session.user.tenantSlug}`"
+            target="_blank"
+            rel="noopener"
+          >
+            صفحهٔ رزرو
+          </a>
           <button class="btn btn--quiet" type="button" @click="logout">خروج</button>
         </div>
       </div>

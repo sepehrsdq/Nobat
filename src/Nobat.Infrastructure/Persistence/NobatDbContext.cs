@@ -8,6 +8,7 @@ using Nobat.Domain.Personnel;
 using Nobat.Domain.Scheduling;
 using Nobat.Domain.Tenants;
 using Nobat.Domain.Users;
+using Nobat.Domain.Verification;
 
 namespace Nobat.Infrastructure.Persistence;
 
@@ -39,6 +40,8 @@ public sealed class NobatDbContext : DbContext, IApplicationDbContext
     public DbSet<WorkingHour> WorkingHours => Set<WorkingHour>();
 
     public DbSet<Appointment> Appointments => Set<Appointment>();
+
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
 
     /// <summary>
     /// Read by the global filters. <see cref="Guid.Empty"/> never matches a row, so an

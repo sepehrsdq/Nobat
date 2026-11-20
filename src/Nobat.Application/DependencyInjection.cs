@@ -4,7 +4,6 @@ using Nobat.Application.Catalog;
 using Nobat.Application.Personnel;
 using Nobat.Application.Public;
 using Nobat.Application.WorkingHours;
-
 namespace Nobat.Application;
 
 public static class DependencyInjection
@@ -27,6 +26,8 @@ public static class DependencyInjection
 
         services.AddScoped<GetPublicClinicHandler>();
         services.AddScoped<GetPublicSlotsHandler>();
+        services.AddScoped<RequestOtpHandler>();
+        services.AddScoped<BookAppointmentHandler>();
 
         return services;
     }

@@ -5,6 +5,7 @@ using Nobat.Domain.Personnel;
 using Nobat.Domain.Scheduling;
 using Nobat.Domain.Tenants;
 using Nobat.Domain.Users;
+using Nobat.Domain.Verification;
 
 namespace Nobat.Application.Abstractions;
 
@@ -25,6 +26,8 @@ public interface IApplicationDbContext
     DbSet<WorkingHour> WorkingHours { get; }
 
     DbSet<Appointment> Appointments { get; }
+
+    DbSet<OtpChallenge> OtpChallenges { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

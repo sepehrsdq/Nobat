@@ -6,6 +6,7 @@ using Nobat.Api.Endpoints;
 using Nobat.Api.Errors;
 using Nobat.Api.Middleware;
 using Nobat.Application;
+using Nobat.Application.Notifications;
 using Nobat.Infrastructure;
 using Nobat.Infrastructure.Persistence;
 
@@ -36,6 +37,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
 });
 builder.Services.AddApplication();
+builder.Services.Configure<SmsOptions>(builder.Configuration.GetSection(SmsOptions.SectionName));
 builder.Services.AddInfrastructure(connectionString);
 
 builder.Services
@@ -82,6 +84,16 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 60,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+
+    // Codes cost money and invite guessing, so this path is tighter than the rest of the public API.
+    options.AddPolicy("otp", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
