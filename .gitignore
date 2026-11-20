@@ -1,0 +1,34 @@
+# ===== مستندات لوکال — هرگز کامیت یا پوش نمی‌شوند =====
+/doc/
+/AGENTS.md
+
+# ===== سکرت‌ها =====
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+appsettings.*.local.json
+
+# ===== .NET =====
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+artifacts/
+TestResults/
+
+# ===== Node / فرانت =====
+node_modules/
+dist/
+src/Nobat.Api/wwwroot/
+*.tsbuildinfo
+
+# ===== ابزار =====
+*.log
+*.db
+*.sqlite
+.DS_Store
+Thumbs.db

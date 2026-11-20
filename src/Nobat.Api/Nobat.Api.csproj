@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Nobat.Api</RootNamespace>
+    <AssemblyName>Nobat.Api</AssemblyName>
+    <UserSecretsId>nobat-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nobat.Application\Nobat.Application.csproj" />
+    <ProjectReference Include="..\Nobat.Infrastructure\Nobat.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

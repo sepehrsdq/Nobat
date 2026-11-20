@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nobat.Api/Nobat.Api.csproj" />
+    <Project Path="src/Nobat.Application/Nobat.Application.csproj" />
+    <Project Path="src/Nobat.Domain/Nobat.Domain.csproj" />
+    <Project Path="src/Nobat.Infrastructure/Nobat.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nobat.IntegrationTests/Nobat.IntegrationTests.csproj" />
+    <Project Path="tests/Nobat.UnitTests/Nobat.UnitTests.csproj" />
+  </Folder>
+</Solution>

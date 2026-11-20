@@ -1,0 +1,35 @@
+/* Design tokens — the palette from doc/_AGENT_BRIEF.md. Change them there first. */
+:root {
+  --ink: #0f1d24;
+  --ink-soft: #4a5b64;
+  --paper: #f6f7f6;
+  --surface: #ffffff;
+  --line: #dbe1e3;
+  --brand: #0b6b62;
+  --brand-soft: #e3f2ef;
+  --accent: #b45309;
+  --danger: #a3271d;
+  --ok: #166534;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-card: 10px;
+  --radius-input: 8px;
+  --radius-pill: 999px;
+
+  --motion-fast: 160ms;
+  --motion-enter: 220ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  --shadow-card: 0 1px 2px rgba(15, 29, 36, 0.06);
+  --focus-ring: 0 0 0 3px rgba(11, 107, 98, 0.3);
+
+  --font-sans: 'Vazirmatn', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  --container: 1080px;
+}

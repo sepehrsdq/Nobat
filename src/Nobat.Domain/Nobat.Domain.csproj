@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure domain: no references, no infrastructure types. -->
+  <PropertyGroup>
+    <RootNamespace>Nobat.Domain</RootNamespace>
+    <AssemblyName>Nobat.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>

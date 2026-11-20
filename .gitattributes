@@ -1,0 +1,14 @@
+# Text files are stored with LF and checked out with CRLF.
+# .editorconfig asks for CRLF and `dotnet format --verify-no-changes` enforces it in CI,
+# so the working tree must keep CRLF on every platform.
+* text=auto eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pfx binary
